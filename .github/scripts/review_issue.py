@@ -151,7 +151,6 @@ Issueの内容に合わないラベルは選ばないでください。適切な
             result = response.choices[0].message.content
             print(f"OpenAIからのレスポンス: {result}")
             
-            import json
             try:
                 labels_data = json.loads(result)
                 if "labels" in labels_data and isinstance(labels_data["labels"], list):
