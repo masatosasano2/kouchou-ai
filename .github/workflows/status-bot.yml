@@ -1,0 +1,53 @@
+name: Update status based on slash commands
+
+permissions:
+  issues: write
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  manage-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: update status only when comment matches command
+        if: startsWith(github.event.comment.body, '/cold') 
+          || startsWith(github.event.comment.body, '/need')
+          || startsWith(github.event.comment.body, '/ready')
+          || startsWith(github.event.comment.body, '/in')
+          || startsWith(github.event.comment.body, '/done')
+          || startsWith(github.event.comment.body, '/arc')
+          || startsWith(github.event.comment.body, '/won')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            shouldUpdate = true;
+            const commentBody = context.payload.comment.body.trim();
+            const issueNumber = context.payload.issue.number;
+            const username = context.payload.comment.user.login;
+            let action = '';
+            let shouldUpdate = false;
+
+            if (startsWith(commentBody, '/cold') {
+              action = 'assigned';
+            } else if (commentBody === '/unassign') {
+              action = 'unassigned';
+            } else {
+              console.log("Comment does not exactly match '/assign' or '/unassign'");
+            }
+            
+            core.setOutput('issue_number', issueNumber.toString());
+            core.setOutput('action', action);
+            core.setOutput('should_update', shouldUpdate.toString());
+
+  assign-status-sync:
+    needs: manage-assignment
+    if: needs.manage-assignment.outputs.should_update == 'true'
+    uses: ./.github/workflows/assign-status-sync.yml
+    with:
+      issue_number: ${{ needs.manage-assignment.outputs.issue_number }}
+      action: ${{ needs.manage-assignment.outputs.action }}
+    secrets:
+      PJ_APP_ID: ${{ secrets.PJ_APP_ID }}
+      PJ_APP_PEM: ${{ secrets.PJ_APP_PEM }}
